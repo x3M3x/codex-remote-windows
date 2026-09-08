@@ -15,7 +15,15 @@
     "windows",
     "app-server"
   ],
-  \"license\": \"MIT\",\n  \"repository\": { \"type\": \"git\", \"url\": \"git+https://github.com/x3M3x/codex-remote-windows.git\" },\n  \"homepage\": \"https://github.com/x3M3x/codex-remote-windows#readme\",\n  \"bugs\": { \"url\": \"https://github.com/x3M3x/codex-remote-windows/issues\" },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/x3M3x/codex-remote-windows.git"
+  },
+  "homepage": "https://github.com/x3M3x/codex-remote-windows#readme",
+  "bugs": {
+    "url": "https://github.com/x3M3x/codex-remote-windows/issues"
+  },
   "files": [
     "bin/",
     "src/",
