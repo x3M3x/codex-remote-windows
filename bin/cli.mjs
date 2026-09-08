@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isCodexDesktopMainProcess } from "../src/desktop.mjs";
+import { isCodexDesktopMainProcess, needsRemoteControlSync } from "../src/desktop.mjs";
 import { disableRemoteControl, enableRemoteControl, readStatus } from "../src/rpc.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -131,7 +131,9 @@ function doStart() {
 let child = null;
 let shuttingDown = false;
 let restarts = 0;
-let rcEnabled = false;
+// app-server resolves its persisted remote-control preference at startup, so
+// the state is unknown until the watcher explicitly synchronizes it.
+let rcEnabled = null;
 let rcPending = false;
 const MAX_RESTARTS = 50;
 
@@ -149,7 +151,7 @@ function desktopActive() {
 
 function spawnServer() {
   const startedAt = Date.now();
-  rcEnabled = false; // fresh app-server always starts with remote control disabled
+  rcEnabled = null;
   const codexExe = findCodexExe();
   log("Starting app-server on ws://127.0.0.1:" + PORT);
   child = spawn(codexExe, ["app-server", "--listen", "ws://127.0.0.1:" + PORT, "--analytics-default-enabled"], {
@@ -194,7 +196,7 @@ function supervise() {
 
 async function syncRemoteControl() {
   const desktop = desktopActive();
-  if (!child || rcPending || rcEnabled === !desktop) return;
+  if (!child || rcPending || !needsRemoteControlSync(rcEnabled, desktop)) return;
   rcPending = true;
   try {
     if (desktop) {

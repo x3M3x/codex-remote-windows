@@ -4,3 +4,7 @@ export function isCodexDesktopMainProcess(process) {
     !/\s--type(?:=|\s)/i.test(process.commandLine || "")
   );
 }
+
+export function needsRemoteControlSync(remoteControlEnabled, desktopOpen) {
+  return remoteControlEnabled !== !desktopOpen;
+}
