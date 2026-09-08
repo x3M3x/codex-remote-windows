@@ -1,6 +1,6 @@
 {
   "name": "codex-remote-windows",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Codex Remote Control manager for Windows: start/stop/restart/status with auto-restart, logon auto-start, and a --port option.",
   "type": "module",
   "scripts": {
