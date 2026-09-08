@@ -85,10 +85,12 @@ function getWatcherPids() {
   return findPids("cli\\.mjs.*--watch.*--port " + PORT + "(\\D|$)");
 }
 
-// The Codex desktop app runs its own app-server WITHOUT --listen (stdio/pipes
-// to the Electron app). It holds the backend remote-control session while open.
-function getDesktopServerPids() {
-  return findPids("codex.*app-server(?!.*--listen)");
+// The Codex desktop app's Electron main process is ChatGPT.exe under
+// WindowsApps/OpenAI.Codex_*. Detecting the Electron app itself (not its
+// app-server child) means a force-killed desktop leaving an orphaned backend
+// no longer blocks take-over.
+function getDesktopPids() {
+  return findPids('WindowsApps[\\/]OpenAI\.Codex_[^"]*ChatGPT\.exe');
 }
 
 function killPid(pid) {
@@ -134,7 +136,7 @@ function shutdown() {
 }
 
 function desktopActive() {
-  return getDesktopServerPids().length > 0;
+  return getDesktopPids().length > 0;
 }
 
 function spawnServer() {
@@ -205,6 +207,12 @@ async function syncRemoteControl() {
 
 function startWatch() {
   writeFileSync(WATCH_PID_FILE, String(process.pid));
+  process.on("uncaughtException", (err) => {
+    log("Watcher error (continuing): " + (err && err.stack || err));
+  });
+  process.on("unhandledRejection", (err) => {
+    log("Watcher rejection (continuing): " + (err && err.stack || err));
+  });
   log("Watcher running (pid " + process.pid + ") on port " + PORT + " (CLI always served; mobile remote control defers to desktop app)");
   supervise();
   setInterval(supervise, 5000);
@@ -228,11 +236,11 @@ function doStop() {
 async function doStatus() {
   try {
     const status = await readStatus(PORT);
-    const heldByDesktop = getDesktopServerPids().length > 0;
+    const heldByDesktop = getDesktopPids().length > 0;
     console.log("Running on port " + PORT + (heldByDesktop ? " (local CLI served; mobile remote control held by the desktop app)" : ""));
     console.log(JSON.stringify(status, null, 2));
   } catch (err) {
-    if (getDesktopServerPids().length) {
+    if (getDesktopPids().length) {
       const watching = getWatcherPids().length > 0;
       console.log("Codex desktop app-server is holding remote control" + (watching ? " - codex-rc watcher is on standby and takes over when it closes" : " - run 'codex-rc start' to supervise and take over when it closes"));
     } else {
