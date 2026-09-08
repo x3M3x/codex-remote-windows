@@ -10,7 +10,7 @@ Codex remote control lets you reach your machine's Codex chats from mobile or an
 
 - Windows
 - Node.js 22+
-- Codex desktop app installed (provides `codex.exe`)
+- Codex CLI installed (provides `codex.exe`)
 
 ## Install
 
