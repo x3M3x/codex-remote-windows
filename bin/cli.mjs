@@ -139,6 +139,7 @@ function desktopActive() {
 
 function spawnServer() {
   const startedAt = Date.now();
+  rcEnabled = false; // fresh app-server always starts with remote control disabled
   const codexExe = findCodexExe();
   log("Starting app-server on ws://127.0.0.1:" + PORT);
   child = spawn(codexExe, ["app-server", "--listen", "ws://127.0.0.1:" + PORT, "--analytics-default-enabled"], {
@@ -182,10 +183,11 @@ function supervise() {
 }
 
 async function syncRemoteControl() {
-  if (!child || rcPending || desktopActive() === rcEnabled) return;
+  const desktop = desktopActive();
+  if (!child || rcPending || rcEnabled === !desktop) return;
   rcPending = true;
   try {
-    if (desktopActive()) {
+    if (desktop) {
       await disableRemoteControl(PORT);
       rcEnabled = false;
       log("Desktop app open - mobile remote control handed over, local server still serving port " + PORT);
