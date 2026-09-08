@@ -39,7 +39,7 @@ const WATCH_PID_FILE = join(ROOT, ".codex-rc-watch-" + PORT + ".pid");
 
 function ps(script) {
   const b64 = Buffer.from(script, "utf16le").toString("base64");
-  return execSync("powershell -NoProfile -EncodedCommand " + b64).toString();
+  return execSync("powershell -NoProfile -EncodedCommand " + b64, { windowsHide: true }).toString();
 }
 
 function log(msg) {
@@ -237,8 +237,12 @@ function doRestart() {
 function doInstall() {
   const cliPath = fileURLToPath(import.meta.url);
   const q = '"';
+  const dq = '""';
+  const vbsPath = join(ROOT, "run-hidden.vbs");
+  const inner = dq + process.execPath + dq + " " + dq + cliPath + dq + " start --port " + PORT;
+  writeFileSync(vbsPath, "CreateObject(" + q + "WScript.Shell" + q + ").Run " + q + inner + q + ", 0, False");
   const script =
-    "$action = New-ScheduledTaskAction -Execute '" + q + process.execPath + q + "' -Argument '" + q + cliPath + q + " start --port " + PORT + "' -WorkingDirectory '" + ROOT + "'; " +
+    "$action = New-ScheduledTaskAction -Execute 'wscript.exe' -Argument '//B " + q + vbsPath + q + "' -WorkingDirectory '" + ROOT + "'; " +
     "$trigger = New-ScheduledTaskTrigger -AtLogOn -User (whoami); " +
     "$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew; " +
     "Register-ScheduledTask -TaskName '" + TASK_NAME + "' -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null";
@@ -248,6 +252,7 @@ function doInstall() {
 
 function doUninstall() {
   doStop();
+  try { unlinkSync(join(ROOT, "run-hidden.vbs")); } catch {}
   try {
     ps("Unregister-ScheduledTask -TaskName '" + TASK_NAME + "' -Confirm:$false");
     console.log("Scheduled task " + TASK_NAME + " removed");
