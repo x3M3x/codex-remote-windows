@@ -38,8 +38,8 @@ const PID_FILE = join(ROOT, ".codex-rc-" + PORT + ".pid");
 const WATCH_PID_FILE = join(ROOT, ".codex-rc-watch-" + PORT + ".pid");
 
 function ps(script) {
-  const b64 = Buffer.from(script, "utf16le").toString("base64");
-  return execSync("powershell -NoProfile -EncodedCommand " + b64, { windowsHide: true }).toString();
+  const b64 = Buffer.from("$ProgressPreference = 'SilentlyContinue'; " + script, "utf16le").toString("base64");
+  return execSync("powershell -NoProfile -OutputFormat Text -EncodedCommand " + b64, { windowsHide: true }).toString();
 }
 
 function log(msg) {
