@@ -34,10 +34,10 @@ Once started, remote control appears as this machine in the Codex mobile app / w
 
 ## Desktop app handover
 
-The Codex desktop app runs its own app-server that holds the backend remote-control session while it is open - only one session per account is allowed. codex-rc cooperates instead of fighting it:
+The Codex desktop app runs its own app-server that holds the mobile remote-control backend session while it is open - only one session per account is allowed. codex-rc keeps a local server running at all times so CLI clients never lose connection, and only the mobile session defers to the desktop app:
 
-- Desktop app open: the codex-rc watcher stays on standby; the desktop app serves remote control.
-- Desktop app closed: within ~5 seconds the watcher starts the standalone app-server on your port, so remote control keeps working.
+- Desktop app open: the local server keeps serving CLI clients (`codex --remote ws://127.0.0.1:PORT resume` works); the desktop app serves mobile remote control.
+- Desktop app closed: within ~5 seconds the watcher enables mobile remote control on the local server.
 - If the standalone server crashes, the watcher restarts it (up to 50 rapid attempts, then gives up; the counter resets after 60s of stable uptime).
 
 `codex-rc status` tells you which mode you are in.

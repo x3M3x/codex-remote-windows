@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { enableRemoteControl, readStatus } from "../src/rpc.mjs";
+import { disableRemoteControl, enableRemoteControl, readStatus } from "../src/rpc.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -121,6 +121,8 @@ function doStart() {
 let child = null;
 let shuttingDown = false;
 let restarts = 0;
+let rcEnabled = false;
+let rcPending = false;
 const MAX_RESTARTS = 50;
 
 function shutdown() {
@@ -149,9 +151,7 @@ function spawnServer() {
   child.stdout.pipe(out);
   child.stderr.pipe(out);
 
-  enableRemoteControl(PORT)
-    .then((status) => log("Remote control status: " + JSON.stringify(status)))
-    .catch((err) => log("Enable warning: " + err.message));
+  syncRemoteControl();
 
   child.on("exit", (code, signal) => {
     log("App-server exited (code " + code + ", signal " + signal + ")");
@@ -163,36 +163,47 @@ function spawnServer() {
       process.exit(1);
     }
     restarts += 1;
-    if (desktopActive()) {
-      log("Codex desktop app-server is active - going on standby");
-      return;
-    }
     log("Restarting in 3s (attempt " + restarts + "/" + MAX_RESTARTS + ")");
     setTimeout(spawnServer, 3000);
   });
 }
 
-// Supervisor loop: while the Codex desktop app is open, its own app-server
-// holds the backend remote-control session (same account, same chats), so ours
-// stands by. The moment it closes, we start ours so remote control continues.
+// The local server always stays up so CLI clients (codex --remote
+// ws://127.0.0.1:PORT) never lose connection. Only the mobile remote-control
+// backend session defers to the desktop app: while it is open, its app-server
+// holds that session, and we enable ours the moment it closes.
 function supervise() {
   if (shuttingDown) return;
-  if (desktopActive()) {
-    if (child) {
-      log("Codex desktop app-server detected - handing over remote control and going on standby");
-      killPid(child.pid);
-    }
+  if (!child) {
+    spawnServer();
     return;
   }
-  if (!child) {
-    log("No desktop app-server - taking over on port " + PORT);
-    spawnServer();
+  syncRemoteControl();
+}
+
+async function syncRemoteControl() {
+  if (!child || rcPending || desktopActive() === rcEnabled) return;
+  rcPending = true;
+  try {
+    if (desktopActive()) {
+      await disableRemoteControl(PORT);
+      rcEnabled = false;
+      log("Desktop app open - mobile remote control handed over, local server still serving port " + PORT);
+    } else {
+      await enableRemoteControl(PORT);
+      rcEnabled = true;
+      log("Desktop app closed - mobile remote control enabled on port " + PORT);
+    }
+  } catch (err) {
+    log("Remote control sync warning: " + err.message);
+  } finally {
+    rcPending = false;
   }
 }
 
 function startWatch() {
   writeFileSync(WATCH_PID_FILE, String(process.pid));
-  log("Watcher running (pid " + process.pid + ") on port " + PORT + ", desktop handover enabled");
+  log("Watcher running (pid " + process.pid + ") on port " + PORT + " (CLI always served; mobile remote control defers to desktop app)");
   supervise();
   setInterval(supervise, 5000);
   process.on("SIGINT", shutdown);
@@ -215,7 +226,8 @@ function doStop() {
 async function doStatus() {
   try {
     const status = await readStatus(PORT);
-    console.log("Running on port " + PORT);
+    const heldByDesktop = getDesktopServerPids().length > 0;
+    console.log("Running on port " + PORT + (heldByDesktop ? " (local CLI served; mobile remote control held by the desktop app)" : ""));
     console.log(JSON.stringify(status, null, 2));
   } catch (err) {
     if (getDesktopServerPids().length) {
