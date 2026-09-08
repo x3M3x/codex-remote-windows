@@ -32,6 +32,16 @@ codex-rc --port 15000 start   # any command accepts --port (default 14567)
 
 Once started, remote control appears as this machine in the Codex mobile app / web, sharing the same chats and account as the desktop app.
 
+## Connect the Codex CLI
+
+Point the Codex CLI at the running server:
+
+```powershell
+codex --remote ws://127.0.0.1:14567 resume
+```
+
+Use the port you configured with `--port` if you changed the default. With the desktop app closed, the CLI and the mobile app both attach to this same server and can share the same live thread.
+
 ## Desktop app handover
 
 The Codex desktop app runs its own app-server that holds the mobile remote-control backend session while it is open - only one session per account is allowed. codex-rc keeps a local server running at all times so CLI clients never lose connection, and only the mobile session defers to the desktop app:
