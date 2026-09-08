@@ -1,0 +1,25 @@
+{
+  "name": "codex-remote-windows",
+  "version": "1.0.0",
+  "description": "Codex Remote Control manager for Windows: start/stop/restart/status with auto-restart, logon auto-start, and a --port option.",
+  "type": "module",
+  "bin": {
+    "codex-rc": "bin/cli.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "codex",
+    "remote-control",
+    "windows",
+    "app-server"
+  ],
+  "license": "MIT",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ]
+}
