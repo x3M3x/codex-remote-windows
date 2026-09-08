@@ -15,7 +15,7 @@
     "windows",
     "app-server"
   ],
-  "license": "MIT",
+  \"license\": \"MIT\",\n  \"repository\": { \"type\": \"git\", \"url\": \"git+https://github.com/x3M3x/codex-remote-windows.git\" },\n  \"homepage\": \"https://github.com/x3M3x/codex-remote-windows#readme\",\n  \"bugs\": { \"url\": \"https://github.com/x3M3x/codex-remote-windows/issues\" },
   "files": [
     "bin/",
     "src/",
