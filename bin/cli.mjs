@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isCodexDesktopMainProcess } from "../src/desktop.mjs";
 import { disableRemoteControl, enableRemoteControl, readStatus } from "../src/rpc.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -90,7 +91,14 @@ function getWatcherPids() {
 // app-server child) means a force-killed desktop leaving an orphaned backend
 // no longer blocks take-over.
 function getDesktopPids() {
-  return findPids('WindowsApps[\\/]OpenAI\.Codex_[^"]*ChatGPT\.exe');
+  try {
+    const out = ps(
+      "@(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq 'ChatGPT.exe' } | ForEach-Object { [PSCustomObject]@{ id = $_.ProcessId; executablePath = $_.ExecutablePath; commandLine = $_.CommandLine } }) | ConvertTo-Json -Compress"
+    ).trim();
+    return JSON.parse(out).filter(isCodexDesktopMainProcess).map((p) => Number(p.id)).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function killPid(pid) {
@@ -199,7 +207,8 @@ async function syncRemoteControl() {
       log("Desktop app closed - mobile remote control enabled on port " + PORT);
     }
   } catch (err) {
-    log("Remote control sync warning: " + err.message);
+    rcEnabled = null;
+    log("Remote control sync warning; will retry: " + err.message);
   } finally {
     rcPending = false;
   }

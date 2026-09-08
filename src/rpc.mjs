@@ -73,8 +73,12 @@ export async function enableRemoteControl(port) {
     latest = await rpc("remoteControl/status/read");
   }
 
+  const result = latest.result || { status: "unknown" };
   ws.close();
-  return latest.result || { status: "unknown" };
+  if (result.status !== "connected") {
+    throw new Error("Remote control did not connect (status: " + result.status + ")");
+  }
+  return result;
 }
 
 export async function readStatus(port) {

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "node src/postinstall.mjs",
-    "test": "node --check bin/cli.mjs && node --check src/rpc.mjs"
+    "test": "node --check bin/cli.mjs && node --check src/rpc.mjs && node test/desktop.mjs"
   },
   "bin": {
     "codex-rc": "bin/cli.mjs"

@@ -30,7 +30,7 @@ codex-rc uninstall  # remove the scheduled task and stop everything
 codex-rc --port 15000 start   # any command accepts --port (default 14567)
 ```
 
-Once started, remote control appears as this machine in the Codex mobile app / web, sharing the same chats and account as the desktop app.
+With the desktop app closed, remote control appears as this machine in Codex mobile / web.
 
 ## Connect the Codex CLI
 
@@ -40,17 +40,19 @@ Point the Codex CLI at the running server:
 codex --remote ws://127.0.0.1:14567 resume
 ```
 
-Use the port you configured with `--port` if you changed the default. With the desktop app closed, the CLI and the mobile app both attach to this same server and can share the same live thread.
+Use the port you configured with `--port` if you changed the default. With the desktop app closed, the CLI and mobile app both attach to this same server. Codex still allows only one active writer per thread, so `resume <thread-id>` fails until the existing writer releases that task.
 
 ## Desktop app handover
 
 The Codex desktop app runs its own app-server that holds the mobile remote-control backend session while it is open - only one session per account is allowed. codex-rc keeps a local server running at all times so CLI clients never lose connection, and only the mobile session defers to the desktop app:
 
-- Desktop app open: the local server keeps serving CLI clients (`codex --remote ws://127.0.0.1:PORT resume` works); the desktop app serves mobile remote control.
-- Desktop app closed: within ~5 seconds the watcher enables mobile remote control on the local server.
+- Desktop app open: Desktop and mobile share the desktop server. The local server still serves CLI clients, but those tasks are separate from Desktop/mobile tasks.
+- Desktop app closed: the watcher retries every ~5 seconds until it enables mobile remote control on the local server, so CLI and mobile share its tasks.
 - If the standalone server crashes, the watcher restarts it (up to 50 rapid attempts, then gives up; the counter resets after 60s of stable uptime).
 
 `codex-rc status` tells you which mode you are in.
+
+Codex currently permits one mobile Remote Control session per account. The desktop app does not expose its app-server as a TCP `--remote` endpoint, so the CLI cannot piggyback on it. A live task cannot be shared across Desktop, a separate local CLI server, and mobile while Desktop is open.
 
 ## Auto-start at logon
 
