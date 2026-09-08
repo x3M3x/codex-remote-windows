@@ -1,0 +1,18 @@
+name: Inspect npm OIDC identity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - name: Print public OIDC claims
+        shell: bash
+        run: |
+          token=$(curl -fsSL -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" | jq -r .value)
+          echo "$token" | cut -d. -f2 | base64 -d 2>/dev/null | jq '{repository, repository_owner, workflow, workflow_ref, job_workflow_ref, environment, ref, ref_type, actor, sub, aud}'
