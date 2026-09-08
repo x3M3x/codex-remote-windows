@@ -4,8 +4,9 @@
   "description": "Codex Remote Control manager for Windows: start/stop/restart/status with auto-restart, logon auto-start, and a --port option.",
   "type": "module",
   "scripts": {
+    "postinstall": "node src/postinstall.mjs",
     "test": "node --check bin/cli.mjs && node --check src/rpc.mjs"
-   },
+  },
   "bin": {
     "codex-rc": "bin/cli.mjs"
   },

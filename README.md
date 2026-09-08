@@ -15,7 +15,7 @@ Codex remote control lets you reach your machine's Codex chats from mobile or an
 ## Install
 
 ```powershell
-npm install -g codex-remote-windows
+npm install -g codex-remote-windows --foreground-scripts
 ```
 
 ## Usage
